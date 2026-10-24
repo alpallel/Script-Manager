@@ -229,6 +229,62 @@ path_script() {
     echo "$resolved"
 }
 
+# Copy and update an external script into SCRIPTS_DIR
+add_script() {
+    ensure_scripts_dir
+    local src="${1:-}"
+    local custom_name="${2:-}"
+
+    if [[ -z "$src" ]]; then
+        echo "Error: Missing script location." >&2
+        echo "Usage: scripts add <path/to/script> [custom_name]" >&2
+        exit 1
+    fi
+
+    if [[ ! -e "$src" ]]; then
+        echo "Error: File not found: '$src'" >&2
+        exit 1
+    fi
+
+    if [[ -d "$src" ]]; then
+        echo "Error: '$src' is a directory, not a script file." >&2
+        exit 1
+    fi
+
+    local target_name
+    if [[ -n "$custom_name" ]]; then
+        target_name="${custom_name%.sh}.sh"
+    else
+        local base
+        base="$(basename "$src")"
+        target_name="${base%.sh}.sh"
+    fi
+
+    local dest="$SCRIPTS_DIR/$target_name"
+
+    # Avoid copying a file onto itself if already in SCRIPTS_DIR
+    local abs_src abs_dest
+    abs_src="$(cd "$(dirname "$src")" && pwd)/$(basename "$src")"
+    abs_dest="$(cd "$SCRIPTS_DIR" && pwd)/$target_name"
+    if [[ "$abs_src" == "$abs_dest" ]]; then
+        chmod +x "$dest"
+        echo -e "${C_GREEN}Updated permissions:${C_RESET} $target_name"
+        return 0
+    fi
+
+    local existed=0
+    [[ -f "$dest" ]] && existed=1
+
+    cp -f "$src" "$dest"
+    chmod +x "$dest"
+
+    if [[ "$existed" -eq 1 ]]; then
+        echo -e "${C_GREEN}Updated:${C_RESET} $target_name in $SCRIPTS_DIR"
+    else
+        echo -e "${C_GREEN}Added:${C_RESET} $target_name to $SCRIPTS_DIR"
+    fi
+}
+
 # Show usage help
 show_help() {
     echo "Usage: scripts [command | script_name] [args...]"
@@ -237,6 +293,7 @@ show_help() {
     echo "  scripts                   List available scripts"
     echo "  scripts <name> [args...]  Execute a script (case-insensitive, .sh optional)"
     echo "  scripts update            Ensure all .sh files in directory are executable"
+    echo "  scripts add <path> [name] Copy and make executable an external script into \$SCRIPTS_DIR"
     echo "  scripts new <name> [desc] Create a new executable script template"
     echo "  scripts edit <name>       Open script in \$EDITOR"
     echo "  scripts path <name>       Print the full file path to a script"
@@ -252,6 +309,11 @@ fi
 case "$1" in
     update)
         update_scripts
+        exit 0
+        ;;
+    add)
+        shift
+        add_script "$@"
         exit 0
         ;;
     new)

@@ -8,6 +8,7 @@ _scripts() {
 
     builtins=(
         'update:Ensure all scripts are executable'
+        'add:Copy and add an external script'
         'new:Create a new script template'
         'edit:Edit a script in editor'
         'path:Print absolute path of a script'

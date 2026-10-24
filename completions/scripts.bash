@@ -4,7 +4,7 @@ _scripts_completions() {
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [[ $COMP_CWORD -eq 1 ]]; then
-        local builtins="update new edit path which help -h --help"
+        local builtins="update add new edit path which help -h --help"
         local scripts
         scripts="$(scripts --list-completions 2>/dev/null)"
         mapfile -t COMPREPLY < <(compgen -W "$builtins $scripts" -- "$cur")
