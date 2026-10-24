@@ -20,7 +20,7 @@ cd Script-Manager
 
 ## Configuration
 
-By default, scripts are loaded from `~/scripts`. To customize this location, set `SCRIPTS_DIR` in your shell configuration:
+By default, scripts are loaded from `~/.scripts`. To customize this location, set `SCRIPTS_DIR` in your shell configuration:
 
 ```fish
 # Fish (~/.config/fish/config.fish)

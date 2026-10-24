@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Path to your scripts directory; override via environment variable if set
-SCRIPTS_DIR="${SCRIPTS_DIR:-$HOME/scripts}"
+SCRIPTS_DIR="${SCRIPTS_DIR:-$HOME/.scripts}"
 
 # Terminal color configuration (disabled if not a TTY or if NO_COLOR is set)
 if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
