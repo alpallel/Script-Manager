@@ -6,7 +6,11 @@ REPO="${REPO:-alpallel/Script-Manager}"
 BRANCH="${BRANCH:-main}"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+    PROJECT_ROOT=""
+fi
 BIN_DIR="${HOME}/.local/bin"
 FISH_COMPLETION_DIR="${HOME}/.config/fish/completions"
 BASH_COMPLETION_DIR="${HOME}/.local/share/bash-completion/completions"
@@ -28,7 +32,7 @@ download_or_install() {
     local dest_path="$2"
     local mode="${3:-644}"
 
-    if [[ -f "$PROJECT_ROOT/$rel_path" ]]; then
+    if [[ -n "$PROJECT_ROOT" && -f "$PROJECT_ROOT/$rel_path" ]]; then
         install -m "$mode" "$PROJECT_ROOT/$rel_path" "$dest_path"
     else
         if [[ "$REPO" == "username/scripts-manager" ]]; then
