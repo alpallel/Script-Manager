@@ -24,8 +24,9 @@ _scripts() {
             fi
         done < <(scripts --list-completions-with-desc 2>/dev/null)
 
-        _describe -t builtins 'builtin command' builtins
-        _describe -t scripts 'script' scripts_list
+        # Custom scripts listed first, followed by command parameters
+        _describe -t scripts 'custom script' scripts_list
+        _describe -t builtins 'command' builtins
     elif (( CURRENT == 3 )); then
         case "${words[2]}" in
             edit|path|which)
@@ -36,7 +37,7 @@ _scripts() {
                 done < <(scripts --list-completions-with-desc 2>/dev/null)
                 _describe -t scripts 'script' scripts_list
                 ;;
-            *)
+            add|*)
                 _files
                 ;;
         esac
