@@ -1,18 +1,25 @@
+# shellcheck shell=bash
+# shellcheck disable=all
+
+# Reset any previous completions for scripts
+complete -c scripts -e
+
 # Disable file completion for subcommands
 complete -c scripts -f -n "__fish_use_subcommand"
 
-# Built-in subcommands
-complete -c scripts -n "__fish_use_subcommand" -a refresh -d "Ensure all scripts in directory are executable"
-complete -c scripts -n "__fish_use_subcommand" -a update -d "Update Script-Manager to latest version"
-complete -c scripts -n "__fish_use_subcommand" -a add -d "Copy and add an external script"
-complete -c scripts -n "__fish_use_subcommand" -a new -d "Create a new script template"
-complete -c scripts -n "__fish_use_subcommand" -a edit -d "Edit a script in your editor"
-complete -c scripts -n "__fish_use_subcommand" -a path -d "Print path to a script"
-complete -c scripts -n "__fish_use_subcommand" -a uninstall -d "Uninstall Script-Manager and shell completions"
-complete -c scripts -n "__fish_use_subcommand" -a help -d "Show usage instructions"
+# 1. Built-in subcommands (registered first with -k)
+complete -c scripts -k -n "__fish_use_subcommand" -a '(printf "%s\t%s\n" \
+    "refresh" "Ensure all scripts in directory are executable" \
+    "update" "Update Script-Manager to latest version" \
+    "add" "Copy and add an external script" \
+    "new" "Create a new script template" \
+    "edit" "Edit a script in editor" \
+    "path" "Print path to a script" \
+    "uninstall" "Uninstall Script-Manager and shell completions" \
+    "help" "Show usage instructions")'
 
-# Custom scripts with individual descriptions
-complete -c scripts -n "__fish_use_subcommand" -a "(scripts --list-completions-with-desc 2>/dev/null)"
+# 2. Custom scripts (registered with -k after subcommands so custom scripts appear first in autocomplete)
+complete -c scripts -k -n "__fish_use_subcommand" -a "(scripts --list-completions-with-desc 2>/dev/null)"
 
 # Complete script names for edit and path commands
 complete -c scripts -n "__fish_seen_subcommand_from edit path" -a "(scripts --list-completions 2>/dev/null)" -d "Script"
