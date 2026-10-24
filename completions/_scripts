@@ -12,6 +12,7 @@ _scripts() {
         'new:Create a new script template'
         'edit:Edit a script in editor'
         'path:Print absolute path of a script'
+        'uninstall:Uninstall Script-Manager and shell completions'
         'help:Show usage instructions'
     )
 

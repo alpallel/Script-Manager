@@ -23,28 +23,11 @@ targets=(
     "$ZSH_COMPLETION"
 )
 
-for target in "${targets[@]}"; do
-    if [[ -f "$target" ]]; then
-        rm -f "$target"
-        echo "  - Removed: $target"
-        ((removed += 1))
-    fi
-done
-
-if [[ "$removed" -eq 0 ]]; then
-    echo "  (No installed files found to remove)"
-else
-    log_success "Uninstall completed. Removed $removed file(s)."
+# Also check command -v scripts
+current_bin="$(command -v scripts 2>/dev/null || true)"
+if [[ -n "$current_bin" && "$current_bin" != "$BIN_TARGET" && -f "$current_bin" ]]; then
+    targets+=("$current_bin")
 fi
-log_info "Removing Script-Manager files..."
-
-removed=0
-targets=(
-    "$BIN_TARGET"
-    "$FISH_COMPLETION"
-    "$BASH_COMPLETION"
-    "$ZSH_COMPLETION"
-)
 
 for target in "${targets[@]}"; do
     if [[ -f "$target" ]]; then

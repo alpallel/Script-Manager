@@ -57,6 +57,7 @@ autoload -Uz compinit && compinit
 | `scripts new <name> [desc]` | Create a new executable script from template and open in `$EDITOR` |
 | `scripts edit <name>` | Open script in `$EDITOR` (or `$VISUAL` / `nano` / `vi`) |
 | `scripts path <name>` | Print the absolute path to a script |
+| `scripts uninstall [-y]` | Uninstall `scripts` binary and all shell completions |
 | `scripts help` | Show usage and available commands |
 
 ### Script Descriptions
@@ -70,7 +71,13 @@ To attach inline descriptions in the listing and tab completions, add a comment 
 
 ## Uninstallation
 
-To uninstall `scripts` and remove all installed shell completions:
+To uninstall `scripts` and remove all installed shell completions, run:
+
+```bash
+scripts uninstall
+```
+
+Or run the uninstallation script directly:
 
 ```bash
 ./uninstall.sh

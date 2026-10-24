@@ -7,6 +7,7 @@ complete -c scripts -n "__fish_use_subcommand" -a add -d "Copy and add an extern
 complete -c scripts -n "__fish_use_subcommand" -a new -d "Create a new script template"
 complete -c scripts -n "__fish_use_subcommand" -a edit -d "Edit a script in your editor"
 complete -c scripts -n "__fish_use_subcommand" -a path -d "Print path to a script"
+complete -c scripts -n "__fish_use_subcommand" -a uninstall -d "Uninstall Script-Manager and shell completions"
 complete -c scripts -n "__fish_use_subcommand" -a help -d "Show usage instructions"
 
 # Custom scripts with individual descriptions

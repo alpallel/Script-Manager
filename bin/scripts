@@ -285,6 +285,62 @@ add_script() {
     fi
 }
 
+# Uninstall Script-Manager and shell completions
+uninstall_scripts() {
+    local force=0
+    if [[ "${1:-}" == "-y" || "${1:-}" == "--yes" ]]; then
+        force=1
+    fi
+
+    if [[ "$force" -eq 0 && -t 0 && -t 1 ]]; then
+        read -r -p "Are you sure you want to uninstall Script-Manager? [y/N] " confirm
+        if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+            echo "Uninstall cancelled."
+            return 0
+        fi
+    fi
+
+    echo -e "${C_CYAN}==>${C_RESET} Uninstalling Script-Manager..."
+
+    local bin_target="${HOME}/.local/bin/scripts"
+    local fish_completion="${HOME}/.config/fish/completions/scripts.fish"
+    local bash_completion="${HOME}/.local/share/bash-completion/completions/scripts"
+    local zsh_completion="${HOME}/.zsh/completion/_scripts"
+
+    local targets=(
+        "$bin_target"
+        "$fish_completion"
+        "$bash_completion"
+        "$zsh_completion"
+    )
+
+    # Also detect if running from another binary path in PATH
+    local current_bin
+    current_bin="$(command -v scripts 2>/dev/null || true)"
+    if [[ -n "$current_bin" && "$current_bin" != "$bin_target" && -f "$current_bin" ]]; then
+        targets+=("$current_bin")
+    fi
+
+    local removed=0
+    for target in "${targets[@]}"; do
+        if [[ -f "$target" ]]; then
+            rm -f "$target"
+            echo "  - Removed: $target"
+            ((removed += 1))
+        fi
+    done
+
+    if [[ "$removed" -eq 0 ]]; then
+        echo "  (No installed files found to remove)"
+    else
+        echo -e "${C_GREEN}==>${C_RESET} Successfully removed $removed installed file(s)."
+    fi
+
+    echo ""
+    echo "Note: Your scripts in '$SCRIPTS_DIR' were preserved."
+    exit 0
+}
+
 # Show usage help
 show_help() {
     echo "Usage: scripts [command | script_name] [args...]"
@@ -297,6 +353,7 @@ show_help() {
     echo "  scripts new <name> [desc] Create a new executable script template"
     echo "  scripts edit <name>       Open script in \$EDITOR"
     echo "  scripts path <name>       Print the full file path to a script"
+    echo "  scripts uninstall [-y]    Uninstall Script-Manager and shell completions"
     echo "  scripts help | -h         Show this help message"
 }
 
@@ -329,6 +386,11 @@ case "$1" in
     path|which)
         shift
         path_script "$@"
+        exit 0
+        ;;
+    uninstall)
+        shift
+        uninstall_scripts "$@"
         exit 0
         ;;
     --list-completions)
