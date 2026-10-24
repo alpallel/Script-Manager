@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Configuration
-REPO="${REPO:-alpallel/Scripts-Manager}"
+REPO="${REPO:-alpallel/Script-Manager}"
 BRANCH="${BRANCH:-main}"
 RAW_BASE="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 

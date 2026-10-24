@@ -1,4 +1,4 @@
-# Scripts Manager
+# Script Manager
 
 A CLI script manager for custom shell scripts with automatic discovery, case insensitive execution, and tab completions for **Bash**, **Fish**, and **Zsh**.
 
@@ -7,14 +7,14 @@ A CLI script manager for custom shell scripts with automatic discovery, case ins
 Run directly via `curl`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/alpallel/Scripts-Manager/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/alpallel/Script-Manager/main/install.sh | bash
 ```
 
 Or clone and install locally:
 
 ```bash
-git clone https://github.com/alpallel/Scripts-Manager.git
-cd scripts-manager
+git clone https://github.com/alpallel/Script-Manager.git
+cd Script-Manager
 ./install.sh
 ```
 
