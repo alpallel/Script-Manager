@@ -52,11 +52,12 @@ autoload -Uz compinit && compinit
 |---|---|
 | `scripts` | List all available scripts with descriptions |
 | `scripts <name> [args...]` | Run script (case-insensitive, `.sh` suffix optional) |
-| `scripts update` | Make all `.sh` files in the directory executable |
+| `scripts refresh` | Make all `.sh` files in the directory executable |
 | `scripts add <path> [name]` | Copy and make executable an external script into `$SCRIPTS_DIR` |
 | `scripts new <name> [desc]` | Create a new executable script from template and open in `$EDITOR` |
 | `scripts edit <name>` | Open script in `$EDITOR` (or `$VISUAL` / `nano` / `vi`) |
 | `scripts path <name>` | Print the absolute path to a script |
+| `scripts update` | Update Script-Manager to the latest version |
 | `scripts uninstall [-y]` | Uninstall `scripts` binary and all shell completions |
 | `scripts help` | Show usage and available commands |
 

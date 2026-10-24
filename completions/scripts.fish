@@ -2,7 +2,8 @@
 complete -c scripts -f -n "__fish_use_subcommand"
 
 # Built-in subcommands
-complete -c scripts -n "__fish_use_subcommand" -a update -d "Ensure all scripts are executable"
+complete -c scripts -n "__fish_use_subcommand" -a refresh -d "Ensure all scripts in directory are executable"
+complete -c scripts -n "__fish_use_subcommand" -a update -d "Update Script-Manager to latest version"
 complete -c scripts -n "__fish_use_subcommand" -a add -d "Copy and add an external script"
 complete -c scripts -n "__fish_use_subcommand" -a new -d "Create a new script template"
 complete -c scripts -n "__fish_use_subcommand" -a edit -d "Edit a script in your editor"
@@ -20,6 +21,4 @@ complete -c scripts -n "__fish_seen_subcommand_from edit path" -a "(scripts --li
 complete -c scripts -n "__fish_seen_subcommand_from add" -F
 
 # Enable file completion for subsequent arguments to custom scripts
-complete -c scripts -n "not __fish_use_subcommand; and not __fish_seen_subcommand_from edit path new" -F
-
-complete -c scripts -n "not __fish_use_subcommand; and not __fish_seen_subcommand_from edit path new" -F
+complete -c scripts -n "not __fish_use_subcommand; and not __fish_seen_subcommand_from edit path new add" -F

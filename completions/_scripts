@@ -7,7 +7,8 @@ _scripts() {
     local name desc
 
     builtins=(
-        'update:Ensure all scripts are executable'
+        'refresh:Ensure all scripts in directory are executable'
+        'update:Update Script-Manager to latest version'
         'add:Copy and add an external script'
         'new:Create a new script template'
         'edit:Edit a script in editor'

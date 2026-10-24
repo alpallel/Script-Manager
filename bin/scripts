@@ -77,10 +77,10 @@ list_scripts() {
     fi
 }
 
-# Ensure execute permissions on all scripts
-update_scripts() {
+# Ensure execute permissions on all scripts in SCRIPTS_DIR
+refresh_scripts() {
     ensure_scripts_dir
-    echo -e "Updating permissions in ${C_CYAN}$SCRIPTS_DIR${C_RESET}..."
+    echo -e "Refreshing permissions in ${C_CYAN}$SCRIPTS_DIR${C_RESET}..."
     local updated=0
 
     shopt -s nullglob
@@ -95,7 +95,33 @@ update_scripts() {
             ((updated += 1))
         fi
     done
-    echo "Done. $updated script(s) updated."
+    echo "Done. $updated script(s) refreshed."
+}
+
+# Update Script-Manager to the latest version from GitHub
+update_manager() {
+    local repo="${REPO:-alpallel/Script-Manager}"
+    local branch="${BRANCH:-main}"
+    local raw_base="https://raw.githubusercontent.com/${repo}/${branch}"
+    local installer_url="${raw_base}/install.sh"
+
+    echo -e "${C_CYAN}==>${C_RESET} Checking for Script-Manager updates from ${repo}@${branch}..."
+
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "Error: 'curl' is required to update Script-Manager." >&2
+        exit 1
+    fi
+
+    local installer_script
+    if ! installer_script="$(curl -fsSL "$installer_url")"; then
+        echo "Error: Failed to fetch update from $installer_url" >&2
+        echo "Please check your internet connection or verify the repository name." >&2
+        exit 1
+    fi
+
+    echo -e "${C_CYAN}==>${C_RESET} Installing latest version..."
+    REPO="$repo" BRANCH="$branch" bash -c "$installer_script"
+    echo -e "${C_GREEN}==>${C_RESET} Script-Manager updated successfully!"
 }
 
 # Resolve script: exact match wins first; case-insensitive fallback; with or without .sh
@@ -348,11 +374,12 @@ show_help() {
     echo "Commands:"
     echo "  scripts                   List available scripts"
     echo "  scripts <name> [args...]  Execute a script (case-insensitive, .sh optional)"
-    echo "  scripts update            Ensure all .sh files in directory are executable"
+    echo "  scripts refresh           Ensure all .sh files in directory are executable"
     echo "  scripts add <path> [name] Copy and make executable an external script into \$SCRIPTS_DIR"
     echo "  scripts new <name> [desc] Create a new executable script template"
     echo "  scripts edit <name>       Open script in \$EDITOR"
     echo "  scripts path <name>       Print the full file path to a script"
+    echo "  scripts update            Update Script-Manager to the latest version"
     echo "  scripts uninstall [-y]    Uninstall Script-Manager and shell completions"
     echo "  scripts help | -h         Show this help message"
 }
@@ -364,8 +391,12 @@ if [[ $# -eq 0 ]]; then
 fi
 
 case "$1" in
+    refresh)
+        refresh_scripts
+        exit 0
+        ;;
     update)
-        update_scripts
+        update_manager
         exit 0
         ;;
     add)
