@@ -1,0 +1,321 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Path to your scripts directory; override via environment variable if set
+SCRIPTS_DIR="${SCRIPTS_DIR:-$HOME/scripts}"
+
+# Terminal color configuration (disabled if not a TTY or if NO_COLOR is set)
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    C_RESET="\033[0m"
+    C_BOLD="\033[1m"
+    C_GREEN="\033[1;32m"
+    C_CYAN="\033[1;36m"
+    C_YELLOW="\033[1;33m"
+    C_RED="\033[1;31m"
+else
+    C_RESET=""
+    C_BOLD=""
+    C_GREEN=""
+    C_CYAN=""
+    C_YELLOW=""
+    C_RED=""
+fi
+
+# Ensure scripts directory exists
+ensure_scripts_dir() {
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        mkdir -p "$SCRIPTS_DIR" || {
+            echo "Error: Cannot create scripts directory: $SCRIPTS_DIR" >&2
+            exit 1
+        }
+    fi
+}
+
+# Extract description from top 25 lines of a script file
+get_description() {
+    local file="$1"
+    head -n 25 "$file" 2>/dev/null | grep -m 1 -i -E '^#[[:space:]]*description:[[:space:]]*' | sed -E 's/^#[[:space:]]*[Dd]escription:[[:space:]]*//' | tr -d '\r' || true
+}
+
+# List all available scripts
+list_scripts() {
+    if [[ ! -d "$SCRIPTS_DIR" ]]; then
+        echo -e "Available scripts in ${C_CYAN}$SCRIPTS_DIR${C_RESET}:"
+        echo "----------------------------------------"
+        echo "  (Directory $SCRIPTS_DIR does not exist)"
+        echo "  Tip: Place your .sh scripts in $SCRIPTS_DIR or run 'scripts new <name>'"
+        return 0
+    fi
+
+    local count=0
+    echo -e "Available scripts in ${C_CYAN}$SCRIPTS_DIR${C_RESET}:"
+    echo "----------------------------------------"
+
+    shopt -s nullglob
+    local files=("$SCRIPTS_DIR"/*.sh)
+    shopt -u nullglob
+
+    for file in "${files[@]}"; do
+        # Ignore directories ending with .sh or dangling symlinks
+        [[ -f "$file" ]] || continue
+
+        local name desc
+        name="$(basename "$file" .sh)"
+        desc="$(get_description "$file")"
+
+        if [[ -n "$desc" ]]; then
+            printf "  • ${C_GREEN}%-18s${C_RESET} %s\n" "$name" "$desc"
+        else
+            printf "  • ${C_GREEN}%s${C_RESET}\n" "$name"
+        fi
+        ((count+=1))
+    done
+    echo "----------------------------------------"
+
+    if [[ "$count" -eq 0 ]]; then
+        echo "  (No .sh scripts found in $SCRIPTS_DIR)"
+    fi
+}
+
+# Ensure execute permissions on all scripts
+update_scripts() {
+    ensure_scripts_dir
+    echo -e "Updating permissions in ${C_CYAN}$SCRIPTS_DIR${C_RESET}..."
+    local updated=0
+
+    shopt -s nullglob
+    local files=("$SCRIPTS_DIR"/*.sh)
+    shopt -u nullglob
+
+    for file in "${files[@]}"; do
+        [[ -f "$file" ]] || continue
+        if [[ ! -x "$file" ]]; then
+            chmod +x "$file"
+            echo -e "  + Marked executable: ${C_GREEN}$(basename "$file")${C_RESET}"
+            ((updated += 1))
+        fi
+    done
+    echo "Done. $updated script(s) updated."
+}
+
+# Resolve script: exact match wins first; case-insensitive fallback; with or without .sh
+find_script() {
+    local target="$1"
+    local base_target="${target%.sh}"
+
+    [[ -d "$SCRIPTS_DIR" ]] || { echo "NOT_FOUND"; return 0; }
+
+    shopt -s nullglob
+    local files=("$SCRIPTS_DIR"/*.sh)
+    shopt -u nullglob
+
+    # 1. Exact match check (prevents lockouts when similar names exist)
+    for file in "${files[@]}"; do
+        [[ -f "$file" ]] || continue
+        local base
+        base="$(basename "$file" .sh)"
+        if [[ "$base" == "$base_target" ]]; then
+            echo "$file"
+            return 0
+        fi
+    done
+
+    # 2. Case-insensitive fallback
+    shopt -s nocasematch
+    local ci_matches=()
+    for file in "${files[@]}"; do
+        [[ -f "$file" ]] || continue
+        local base
+        base="$(basename "$file" .sh)"
+        if [[ "$base" == "$base_target" ]]; then
+            ci_matches+=("$file")
+        fi
+    done
+    shopt -u nocasematch
+
+    if [[ ${#ci_matches[@]} -eq 1 ]]; then
+        echo "${ci_matches[0]}"
+    elif [[ ${#ci_matches[@]} -gt 1 ]]; then
+        echo "AMBIGUOUS"
+    else
+        echo "NOT_FOUND"
+    fi
+}
+
+# Create a new script template
+new_script() {
+    ensure_scripts_dir
+    local name="${1:-}"
+    if [[ -z "$name" ]]; then
+        echo "Error: Script name required. Usage: scripts new <name> [description]" >&2
+        exit 1
+    fi
+    local file_name="${name%.sh}.sh"
+    local full_path="$SCRIPTS_DIR/$file_name"
+    if [[ -e "$full_path" ]]; then
+        echo "Error: Script '$file_name' already exists at $full_path" >&2
+        exit 1
+    fi
+    shift || true
+    local desc="${*:-}"
+
+    cat <<EOF > "$full_path"
+#!/usr/bin/env bash
+set -euo pipefail
+# Description: ${desc:-TODO: Add description}
+
+echo "Running $file_name..."
+EOF
+    chmod +x "$full_path"
+    echo -e "${C_GREEN}Created:${C_RESET} $full_path"
+
+    # Open in editor if running interactively and not disabled
+    if [[ -t 0 && -t 1 && "${SCRIPTS_NO_EDITOR:-0}" != "1" ]]; then
+        local editor="${EDITOR:-${VISUAL:-nano}}"
+        if command -v "$editor" >/dev/null 2>&1; then
+            exec "$editor" "$full_path"
+        fi
+    fi
+}
+
+# Edit an existing script
+edit_script() {
+    ensure_scripts_dir
+    local name="${1:-}"
+    if [[ -z "$name" ]]; then
+        echo "Error: Script name required. Usage: scripts edit <name>" >&2
+        exit 1
+    fi
+    local resolved
+    resolved="$(find_script "$name")"
+    if [[ "$resolved" == "NOT_FOUND" ]]; then
+        echo "Script '$name' not found in $SCRIPTS_DIR." >&2
+        if [[ -t 0 && -t 1 ]]; then
+            read -r -p "Create new script '$name.sh'? [y/N] " confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                new_script "$name"
+                return 0
+            fi
+        fi
+        exit 1
+    elif [[ "$resolved" == "AMBIGUOUS" ]]; then
+        echo "Error: Multiple scripts match '$name' case-insensitively. Please specify exact name." >&2
+        exit 1
+    fi
+
+    local editor="${EDITOR:-${VISUAL:-nano}}"
+    if ! command -v "$editor" >/dev/null 2>&1; then
+        editor="vi"
+    fi
+    exec "$editor" "$resolved"
+}
+
+# Print the path to a script
+path_script() {
+    local name="${1:-}"
+    if [[ -z "$name" ]]; then
+        echo "Error: Script name required. Usage: scripts path <name>" >&2
+        exit 1
+    fi
+    local resolved
+    resolved="$(find_script "$name")"
+    if [[ "$resolved" == "NOT_FOUND" ]]; then
+        echo "Error: Script '$name' not found in $SCRIPTS_DIR" >&2
+        exit 1
+    elif [[ "$resolved" == "AMBIGUOUS" ]]; then
+        echo "Error: Multiple scripts match '$name' case-insensitively. Please specify exact name." >&2
+        exit 1
+    fi
+    echo "$resolved"
+}
+
+# Show usage help
+show_help() {
+    echo "Usage: scripts [command | script_name] [args...]"
+    echo ""
+    echo "Commands:"
+    echo "  scripts                   List available scripts"
+    echo "  scripts <name> [args...]  Execute a script (case-insensitive, .sh optional)"
+    echo "  scripts update            Ensure all .sh files in directory are executable"
+    echo "  scripts new <name> [desc] Create a new executable script template"
+    echo "  scripts edit <name>       Open script in \$EDITOR"
+    echo "  scripts path <name>       Print the full file path to a script"
+    echo "  scripts help | -h         Show this help message"
+}
+
+# Main routing
+if [[ $# -eq 0 ]]; then
+    list_scripts
+    exit 0
+fi
+
+case "$1" in
+    update)
+        update_scripts
+        exit 0
+        ;;
+    new)
+        shift
+        new_script "$@"
+        exit 0
+        ;;
+    edit)
+        shift
+        edit_script "$@"
+        exit 0
+        ;;
+    path|which)
+        shift
+        path_script "$@"
+        exit 0
+        ;;
+    --list-completions)
+        # Helper flag for shell tab-completion
+        if [[ -d "$SCRIPTS_DIR" ]]; then
+            shopt -s nullglob
+            for file in "$SCRIPTS_DIR"/*.sh; do
+                [[ -f "$file" ]] || continue
+                basename "$file" .sh
+            done
+            shopt -u nullglob
+        fi
+        exit 0
+        ;;
+    --list-completions-with-desc)
+        # Helper flag for shell tab-completion with descriptions
+        if [[ -d "$SCRIPTS_DIR" ]]; then
+            shopt -s nullglob
+            for file in "$SCRIPTS_DIR"/*.sh; do
+                [[ -f "$file" ]] || continue
+                name="$(basename "$file" .sh)"
+                desc="$(get_description "$file")"
+                printf "%s\t%s\n" "$name" "${desc:-Run script}"
+            done
+            shopt -u nullglob
+        fi
+        exit 0
+        ;;
+    -h|--help|help)
+        show_help
+        exit 0
+        ;;
+    *)
+        resolved="$(find_script "$1")"
+        if [[ "$resolved" == "NOT_FOUND" ]]; then
+            echo "Error: Script '$1' not found in $SCRIPTS_DIR" >&2
+            echo "Run 'scripts' to list all available scripts." >&2
+            exit 1
+        elif [[ "$resolved" == "AMBIGUOUS" ]]; then
+            echo "Error: Multiple scripts match '$1' case-insensitively. Please specify exact name." >&2
+            exit 1
+        fi
+
+        # Ensure executable before launching
+        if [[ ! -x "$resolved" ]]; then
+            chmod +x "$resolved" 2>/dev/null || true
+        fi
+
+        shift
+        exec "$resolved" "$@"
+        ;;
+esac

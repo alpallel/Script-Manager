@@ -1,0 +1,45 @@
+#compdef scripts
+# shellcheck shell=bash
+# shellcheck disable=all
+
+_scripts() {
+    local -a builtins scripts_list
+    local name desc
+
+    builtins=(
+        'update:Ensure all scripts are executable'
+        'new:Create a new script template'
+        'edit:Edit a script in editor'
+        'path:Print absolute path of a script'
+        'help:Show usage instructions'
+    )
+
+    if (( CURRENT == 2 )); then
+        while IFS=$'\t' read -r name desc; do
+            if [[ -n "$name" ]]; then
+                scripts_list+=("${name}:${desc}")
+            fi
+        done < <(scripts --list-completions-with-desc 2>/dev/null)
+
+        _describe -t builtins 'builtin command' builtins
+        _describe -t scripts 'script' scripts_list
+    elif (( CURRENT == 3 )); then
+        case "${words[2]}" in
+            edit|path|which)
+                while IFS=$'\t' read -r name desc; do
+                    if [[ -n "$name" ]]; then
+                        scripts_list+=("${name}:${desc}")
+                    fi
+                done < <(scripts --list-completions-with-desc 2>/dev/null)
+                _describe -t scripts 'script' scripts_list
+                ;;
+            *)
+                _files
+                ;;
+        esac
+    else
+        _files
+    fi
+}
+
+_scripts "$@"
